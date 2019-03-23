@@ -1,0 +1,32 @@
+package it.easyscid.coluccia.easyscidcore;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class MainController {
+	private static final String template = "Hello, %s!";
+	private static CodeInterface codeFactory;
+	
+	@GetMapping("/hello-world-normal")
+    public String sayHello(@RequestParam(name="name", required=false, defaultValue="Stranger") String name) {
+		return String.format(template, name);
+    }
+	
+	@GetMapping("/hello-world-redis")
+    public String sayHelloRedis() {
+		return codeFactory.sayHelloRedis();
+    }
+
+	public static CodeInterface getCodeFactory() {
+		return codeFactory;
+	}
+
+	public static void setCodeFactory(CodeInterface codeFactory) {
+		MainController.codeFactory = codeFactory;
+	}
+	
+	
+
+}

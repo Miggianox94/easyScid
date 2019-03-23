@@ -1,0 +1,43 @@
+version: '2'
+
+services:
+  redis:
+    image: 'bitnami/redis:latest'
+    environment:
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+      #- REDIS_REPLICATION_MODE=master
+      #- REDIS_PASSWORD=my_master_password
+    #command: /run.sh --maxmemory 100mb
+    labels:
+      kompose.service.type: nodeport
+    ports:
+      - '6379:6379'
+    volumes:
+      #- /path/to/your_redis.conf:/opt/bitnami/redis/etc/redis.conf
+      - './data:/bitnami/redis'
+      
+#  redis-replica:
+#    image: 'bitnami/redis:latest'
+#    ports:
+#      - '6379'
+#    depends_on:
+#      - redis-master
+#    environment:
+#      - REDIS_REPLICATION_MODE=slave
+#      - REDIS_MASTER_HOST=redis-master
+#      - REDIS_MASTER_PORT_NUMBER=6379
+#      - REDIS_MASTER_PASSWORD=my_master_password
+#      - REDIS_PASSWORD=my_replica_password
+
+#volumes:
+#  redis_data:
+#    driver: local
+
+#networks:
+#  app-tier:
+#    driver: bridge
+
+#command to scaling up (always one master)
+# docker-compose up --detach --scale redis-master=1 --scale redis-secondary=3
