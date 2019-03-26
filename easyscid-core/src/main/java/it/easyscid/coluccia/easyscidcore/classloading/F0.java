@@ -1,4 +1,4 @@
-package it.easyscid.coluccia.easyscidcore;
+package it.easyscid.coluccia.easyscidcore.classloading;
 
 /**
  * Represent a function that accept no parameter and return value

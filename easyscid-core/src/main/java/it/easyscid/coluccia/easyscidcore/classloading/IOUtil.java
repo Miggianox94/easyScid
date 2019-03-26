@@ -1,10 +1,10 @@
-package it.easyscid.coluccia.easyscidcore;
+package it.easyscid.coluccia.easyscidcore.classloading;
 
-import java.io.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.Flushable;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Created by Quan on 22/12/2014.
@@ -40,24 +40,25 @@ public class IOUtil {
 			throw new RuntimeException(e);
         }
 	}
-	
-	
+    
     /**
-     * Close streams (in or out)
-     * @param stream
-     */
-    public static void close(Closeable stream) {
-        if (stream != null) {
-            try {
-                if (stream instanceof Flushable) {
-                    ((Flushable)stream).flush();
-                }
-                stream.close();
-            } catch (IOException e) {
-                // When the stream is closed or interupted, can ignore this exception
-            }
-        }
-    }
+    * Close streams (in or out)
+    * @param stream
+    */
+   public static void close(Closeable stream) {
+       if (stream != null) {
+           try {
+               if (stream instanceof Flushable) {
+                   ((Flushable)stream).flush();
+               }
+               stream.close();
+           } catch (IOException e) {
+               // When the stream is closed or interupted, can ignore this exception
+           }
+       }
+   }
+	
+	/*
 
 	public static void close(Connection conn) {
         if (conn != null) {
@@ -89,22 +90,22 @@ public class IOUtil {
     	}
     }
 	
-	/**
+	*//**
 	 * Will close stream
 	 * @param in
 	 * @param charSet
 	 * @return
-	 */
+	 *//*
 	public static String toString(InputStream in, String charSet) {
 		return inputStreamToString_force(in, charSet);
 	}
 	
-	/**
+	*//**
 	 * Will close stream
 	 * @param in
 	 * @param charSet
 	 * @return
-	 */
+	 *//*
 	public static String inputStreamToString_force(InputStream in, String charSet) {
 		try {
 			return inputStreamToString(in, charSet);
@@ -113,7 +114,7 @@ public class IOUtil {
 		}
 	}
 
-    /**
+    *//**
      * Reads in whole input stream and returns as a string<br>
      * Will close stream
      * @param in The input stream to read in, will be closed 
@@ -121,7 +122,7 @@ public class IOUtil {
      * @param charSet charset to convert the input bytes into string
      * @return the result string
      * @throws IOException
-     */
+     *//*
 	public static String inputStreamToString(InputStream in, String charSet) throws IOException {
 		InputStreamReader inputStreamReader = null;
 		try {
@@ -135,13 +136,13 @@ public class IOUtil {
 		}
 	}
 	
-    /**
+    *//**
      * Reads in whole input stream and returns as a string
      * @param reader The input reader to read in, will be closed 
      * 				by this method at finish
      * @return the result string
      * @throws IOException
-     */
+     *//*
 	public static String toString(Reader reader) {
 		try {
 			StringBuilder sb = new StringBuilder();
@@ -157,13 +158,13 @@ public class IOUtil {
 		}
 	}
 
-	/**
+	*//**
 	 * Read the input stream and write to output stream
 	 * @param inputStream
 	 * @param out
 	 * @return
 	 * @throws IOException
-	 */
+	 *//*
     public static long connect(InputStream inputStream, OutputStream out) throws IOException {
         try {
             return dump(inputStream, out);
@@ -184,5 +185,5 @@ public class IOUtil {
         out.flush();
         return total;
     }
-
+*/
 }

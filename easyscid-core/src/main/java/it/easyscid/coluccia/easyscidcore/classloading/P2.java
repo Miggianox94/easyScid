@@ -1,4 +1,4 @@
-package it.easyscid.coluccia.easyscidcore;
+package it.easyscid.coluccia.easyscidcore.classloading;
 
 /**
  * Function that accept 2 objects and return nothing

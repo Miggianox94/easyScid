@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class MainController {
 	private static final String template = "Hello, %s!";
-	private static CodeInterface codeFactory;
+	private static CodeInterface codeFactory = null;
 	
 	@GetMapping("/hello-world-normal")
     public String sayHello(@RequestParam(name="name", required=false, defaultValue="Stranger") String name) {

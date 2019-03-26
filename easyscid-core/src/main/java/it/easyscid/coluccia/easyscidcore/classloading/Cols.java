@@ -1,4 +1,4 @@
-package it.easyscid.coluccia.easyscidcore;
+package it.easyscid.coluccia.easyscidcore.classloading;
 
 
 import java.util.*;
