@@ -15,6 +15,7 @@ public class MainController {
     }
 	
 	@GetMapping("/hello-world-redis")
+	@EasyScidMethod(classFolder="./target/classes/", sourceFolder="./src/main/java/", interfaceName = "it.easyscid.coluccia.easyscidcore.CodeInterface")
     public String sayHelloRedis() {
 		return codeFactory.sayHelloRedis();
     }

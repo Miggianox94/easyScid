@@ -1,20 +1,20 @@
 package it.easyscid.coluccia.easyscidcore;
 
+import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 
-import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.implementation.MethodDelegation;
 import redis.clients.jedis.Jedis;
-import static net.bytebuddy.matcher.ElementMatchers.*;
-import static net.bytebuddy.matcher.ElementMatchers.not;
 
 @Aspect
 @Configuration
@@ -24,53 +24,28 @@ public class AOPBefore {
 	private Logger logger = LoggerFactory.getLogger(this.getClass());
 	//private Class<?> dynamicClass;
 
-	@Before("execution(* it.easyscid.coluccia.easyscidcore.MainController.sayHelloRedis(..))")
+	//@Before("execution(* it.easyscid.coluccia.easyscidcore.MainController.sayHelloRedis(..))")
+	@Before("execution(@EasyScidMethod * *(..))")
 	public void before(JoinPoint joinPoint)
 			throws ClassNotFoundException, InstantiationException, IllegalAccessException {
 
-		if (MainController.getCodeFactory() != null) {
+		MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+		Method thisMethod = signature.getMethod();
+		EasyScidMethod annotation = thisMethod.getAnnotation(EasyScidMethod.class);
+		
+		/*if (MainController.getCodeFactory() != null) {
 			logger.info("Code Factory già inizializato");
 			return;
-		}
+		}*/
 		
-		CodeInterface implementation = getImplementation();
+		CodeInterface implementation = getImplementation(annotation.classFolder(),annotation.sourceFolder(),annotation.interfaceName());
 		MainController.setCodeFactory(implementation);
 		logger.info("Code Factory adesso inizializzato");
 
-		/*dynamicClass = Class.forName("it.easyscid.coluccia.easyscidcore." + DYNAMIC_CLASS_NAME);
-
-		Object iClass = dynamicClass.newInstance();
-
-		Class<? extends MainController> subController = new ByteBuddy().subclass(MainController.class)
-				.method(named("sayHelloRedis")).intercept(MethodDelegation.to(iClass)).make()
-				.load(getClass().getClassLoader()).getLoaded();*/
-		/*
-		 * try { if (MainController.code != null) {
-		 * logger.info("MainController già inizializzato!"); return; } // get
-		 * the class pool ClassPool pool = ClassPool.getDefault(); // access the
-		 * class without loading it just yet CtClass clazz =
-		 * pool.get("it.easyscid.coluccia.easyscidcore.CodeClass"); //
-		 * clazz.defrost(); // CtMethod[] methods = clazz.getMethods(); CtMethod
-		 * method = clazz.getMethod("sayHelloRedis",
-		 * "(Ljava/lang/String;)Ljava/lang/String;");
-		 * method.setBody(value.replace("\\", "")); clazz.writeFile(); Class
-		 * codeclass = clazz.toClass(); // clazz.detach(); // CodeClass
-		 * codeupdated = (CodeClass)codeclass.newInstance(); CodeClass
-		 * codeupdated = new CodeClass(); MainController.code = codeupdated;
-		 * 
-		 * 
-		 * ClassPool cp = ClassPool.getDefault(); CtClass controller =
-		 * cp.get("it.easyscid.coluccia.easyscidcore.CodeClass"); CtClass redis
-		 * = cp.get("Singleton"); CtClass actual = cp.get("Client");
-		 * CodeConverter conv = new CodeConverter(); conv.replaceNew(actual,
-		 * redis, "sayHelloRedis"); controller.instrument(conv);
-		 * 
-		 * } catch (Exception e) { logger.error(e.getMessage(), e); }
-		 */
 
 	}
 
-	public void createIt() {
+	public void createIt(String packageName, String interfaceName) {
 		try {
 
 			Jedis jedis = new Jedis("localhost");
@@ -80,7 +55,7 @@ public class AOPBefore {
 
 			FileWriter aWriter = new FileWriter(
 					"./src/main/java/it/easyscid/coluccia/easyscidcore/" + DYNAMIC_CLASS_NAME + ".java", false);
-			aWriter.write("package it.easyscid.coluccia.easyscidcore;");
+			aWriter.write("package "+packageName+";");
 			aWriter.write("public class " + DYNAMIC_CLASS_NAME + " implements CodeInterface{");
 			aWriter.write(" public String sayHelloRedis() {");
 			// aWriter.write(" return \"Hello Fucking World!\";");
@@ -93,9 +68,9 @@ public class AOPBefore {
 		}
 	}
 
-	public boolean compileIt() {
-		String[] source = { "-d", "./target/classes/", "-sourcepath", "./src/main/java/",
-				new String("./src/main/java/it/easyscid/coluccia/easyscidcore/" + DYNAMIC_CLASS_NAME + ".java") };
+	public boolean compileIt(String classFolder, String sourceFolder, String packagePath) {
+		String[] source = { "-d", classFolder, "-sourcepath", sourceFolder,
+				new String(sourceFolder+packagePath + File.separatorChar + DYNAMIC_CLASS_NAME + ".java") };
 		return (com.sun.tools.javac.Main.compile(source) == 0);
 	}
 
@@ -113,27 +88,51 @@ public class AOPBefore {
 		return null;
 	}
 	
-	private CodeInterface getImplementation() throws InstantiationException, IllegalAccessException, ClassNotFoundException{
-		createIt();
-		if (compileIt()) {
+	private CodeInterface getImplementation(String classFolder, String sourceFolder, String interfaceName) throws InstantiationException, IllegalAccessException, ClassNotFoundException{
+		String packageName = interfaceName.substring(0, interfaceName.lastIndexOf("."));
+		String interfaceClassName = interfaceName.substring(interfaceName.lastIndexOf(".")+1);
+		createIt(packageName,interfaceClassName);
+		if (compileIt(classFolder,sourceFolder,packageName.replace(".", "/"))) {
 			logger.info("Compiled correctly");
-			return (CodeInterface)Class.forName("it.easyscid.coluccia.easyscidcore." + DYNAMIC_CLASS_NAME).newInstance();
+			//return (CodeInterface)Class.forName(packageName+"." + DYNAMIC_CLASS_NAME).newInstance();
+			try {	
+				return (CodeInterface)reloadImplementation(classFolder,packageName+"."+DYNAMIC_CLASS_NAME);
+			} catch (IOException e) {
+				logger.error(e.getMessage(),e);
+				return null;
+			}
 		}
 		else{
 			logger.error("Compilation failed");
 			return null;
 		}
 	}
+	
+	private Object reloadImplementation(String classFolder,String fullPackageClass) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException, IllegalArgumentException, SecurityException{
+		DynamicClassLoader dynamicClassLoader = new DynamicClassLoader(classFolder);
+		dynamicClassLoader.getLoadedClasses().add(CodeInterface.class.getName());
+		Class<?> reloadedClass = dynamicClassLoader.load(fullPackageClass);
+	    if(reloadedClass.isInterface()){
+	    	return null;
+	    }
+	    Object toReturn = reloadedClass.newInstance();
+	    try {
+			Object returnedValue = reloadedClass.getMethods()[0].invoke(reloadedClass.newInstance());
+		} catch (InvocationTargetException e) {
+			logger.error(e.getMessage(),e);
+		}
+	    return toReturn;
+	}
 
 	public static void main(String args[]) {
 		AOPBefore mtc = new AOPBefore();
 		//System.out.println(mtc.runIt());
-		mtc.createIt();
+		/*mtc.createIt();
 		if (mtc.compileIt()) {
 			System.out.println("Running " + DYNAMIC_CLASS_NAME + ":\n\n");
 			System.out.println(mtc.runIt());
 		} else
-			System.out.println(DYNAMIC_CLASS_NAME + ".java" + " is bad.");
+			System.out.println(DYNAMIC_CLASS_NAME + ".java" + " is bad.");*/
 	}
 
 }
