@@ -12,5 +12,6 @@ public @interface EasyScidMethod {
 	String classFolder() default "./";
 	String sourceFolder() default "./";
 	String interfaceName();
+	String setterMethod() default "setCodeFactory";
 	
 }

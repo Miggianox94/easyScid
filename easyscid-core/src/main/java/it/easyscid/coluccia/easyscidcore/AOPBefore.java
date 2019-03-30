@@ -16,6 +16,8 @@ import org.springframework.context.annotation.Configuration;
 import it.easyscid.coluccia.easyscidcore.classloading.DynamicClassLoader;
 import redis.clients.jedis.Jedis;
 
+import com.sun.tools.javac.*;
+
 @Aspect
 @Configuration
 public class AOPBefore {
@@ -26,7 +28,7 @@ public class AOPBefore {
 	//@Before("execution(* it.easyscid.coluccia.easyscidcore.MainController.sayHelloRedis(..))")
 	@Before("execution(@EasyScidMethod * *(..))")
 	public void before(JoinPoint joinPoint)
-			throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+			throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
 
 		MethodSignature signature = (MethodSignature) joinPoint.getSignature();
 		Method thisMethod = signature.getMethod();
@@ -43,7 +45,7 @@ public class AOPBefore {
 			Object caller = joinPoint.getThis();
 			Class<?> params[] = { CodeInterface.class };
 			Object paramsObj[] = { implementation };
-			Method setCodeFactoryMethod = caller.getClass().getMethod("setCodeFactory", params);
+			Method setCodeFactoryMethod = caller.getClass().getMethod(annotation.setterMethod(), params);
 			setCodeFactoryMethod.invoke(caller, paramsObj);
 			logger.info("Code Factory adesso inizializzato");
 		} catch (Exception e) {
@@ -52,8 +54,7 @@ public class AOPBefore {
 
 	}
 
-	public void createIt(String packageName, String interfaceName, String sourceFolder) {
-		try {
+	public void createIt(String packageName, String interfaceName, String sourceFolder) throws IOException {
 
 			Jedis jedis = new Jedis("localhost");
 			String value = jedis.get("helloworldmethod");
@@ -70,15 +71,13 @@ public class AOPBefore {
 			aWriter.write(" }}\n");
 			aWriter.flush();
 			aWriter.close();
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
-		}
+
 	}
 
 	public boolean compileIt(String classFolder, String sourceFolder, String packagePath) {
-		String[] source = { "-d", classFolder, "-sourcepath", sourceFolder,
+		String[] source = { "-cp",".:/*","-d", classFolder, "-sourcepath", sourceFolder,
 				new String(sourceFolder+packagePath + File.separatorChar + DYNAMIC_CLASS_NAME + ".java") };
-		return (com.sun.tools.javac.Main.compile(source) == 0);
+		return (Main.compile(source) == 0);
 	}
 
 	public Object runIt() {
@@ -95,7 +94,7 @@ public class AOPBefore {
 		return null;
 	}
 	
-	private CodeInterface getImplementation(String classFolder, String sourceFolder, String interfaceName) throws InstantiationException, IllegalAccessException, ClassNotFoundException{
+	private CodeInterface getImplementation(String classFolder, String sourceFolder, String interfaceName) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException{
 		String packageName = interfaceName.substring(0, interfaceName.lastIndexOf("."));
 		String interfaceClassName = interfaceName.substring(interfaceName.lastIndexOf(".")+1);
 		createIt(packageName,interfaceClassName,sourceFolder);
