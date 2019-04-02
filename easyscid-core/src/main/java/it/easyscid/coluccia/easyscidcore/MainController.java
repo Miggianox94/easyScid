@@ -16,8 +16,8 @@ public class MainController {
     }
 	
 	@GetMapping("/hello-world-redis")
-	@EasyScidMethod(classFolder="./target/classes/", sourceFolder="./src/main/java/", interfaceName = "it.easyscid.coluccia.easyscidcore.CodeInterface", setterMethod = "setCodeFactory")
-	//@EasyScidMethod(classFolder="./", sourceFolder="./", interfaceName = "it.easyscid.coluccia.easyscidcore.CodeInterface", setterMethod = "setCodeFactory")
+	//@EasyScidMethod(classFolder="./target/classes/", sourceFolder="./src/main/java/", interfaceName = "it.easyscid.coluccia.easyscidcore.CodeInterface", setterMethod = "setCodeFactory")
+	@EasyScidMethod(classFolder="./", sourceFolder="./", interfaceName = "it.easyscid.coluccia.easyscidcore.CodeInterface", setterMethod = "setCodeFactory")
 	public String sayHelloRedis() {
 		return codeFactory.sayHelloRedis();
     }

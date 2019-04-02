@@ -1,6 +1,8 @@
 package it.easyscid.coluccia.easyscidcore.classloading;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -10,11 +12,17 @@ public abstract class AggressiveClassLoader extends ClassLoader {
 
 	Set<String> loadedClasses = new HashSet<>();
 	Set<String> unavaiClasses = new HashSet<>();
+	Map<String,Class<?>> loadedClassesReferences = new HashMap<>();
     private ClassLoader parent = AggressiveClassLoader.class.getClassLoader();
 
     @Override
 	public Class<?> loadClass(String name) throws ClassNotFoundException {
+    	System.out.println("Trying to load class: "+name);
 		if (loadedClasses.contains(name) || unavaiClasses.contains(name)) {
+			if(loadedClasses.contains(name)){
+				System.out.println("Class already loaded: "+name);
+				return loadedClassesReferences.get(name);
+			}
 			return super.loadClass(name); // Use default CL cache
 		}
 
@@ -69,6 +77,14 @@ public abstract class AggressiveClassLoader extends ClassLoader {
 
 	public void setLoadedClasses(Set<String> loadedClasses) {
 		this.loadedClasses = loadedClasses;
+	}
+
+	public Map<String, Class<?>> getLoadedClassesReferences() {
+		return loadedClassesReferences;
+	}
+
+	public void setLoadedClassesReferences(Map<String, Class<?>> loadedClassesReferences) {
+		this.loadedClassesReferences = loadedClassesReferences;
 	}
 	
 	

@@ -1,6 +1,5 @@
 package it.easyscid.coluccia.easyscidcore;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -13,23 +12,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 
+import com.sun.tools.javac.Main;
+
 import it.easyscid.coluccia.easyscidcore.classloading.DynamicClassLoader;
 import redis.clients.jedis.Jedis;
-
-import com.sun.tools.javac.*;
 
 @Aspect
 @Configuration
 public class AOPBefore {
 
 	public final static String DYNAMIC_CLASS_NAME = "HelloFuckingWorld";
+	private final String JAR_NAME = "easyscid-core-0.0.1-SNAPSHOT.jar.original";
+	
 	private Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	//@Before("execution(* it.easyscid.coluccia.easyscidcore.MainController.sayHelloRedis(..))")
 	@Before("execution(@EasyScidMethod * *(..))")
 	public void before(JoinPoint joinPoint)
 			throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
-
+		logger.info("before is executing: "+joinPoint);
+		System.out.println("before is executing: "+joinPoint);
 		MethodSignature signature = (MethodSignature) joinPoint.getSignature();
 		Method thisMethod = signature.getMethod();
 		EasyScidMethod annotation = thisMethod.getAnnotation(EasyScidMethod.class);
@@ -39,11 +41,11 @@ public class AOPBefore {
 			return;
 		}*/
 		
-		CodeInterface implementation = getImplementation(annotation.classFolder(),annotation.sourceFolder(),annotation.interfaceName());
+		Object implementation = getImplementation(annotation.classFolder(),annotation.sourceFolder(),annotation.interfaceName());
 		
 		try {
 			Object caller = joinPoint.getThis();
-			Class<?> params[] = { CodeInterface.class };
+			Class<?> params[] = { Class.forName(annotation.interfaceName()) };
 			Object paramsObj[] = { implementation };
 			Method setCodeFactoryMethod = caller.getClass().getMethod(annotation.setterMethod(), params);
 			setCodeFactoryMethod.invoke(caller, paramsObj);
@@ -63,7 +65,7 @@ public class AOPBefore {
 
 			String packagePath = packageName.replace(".", "/");
 			FileWriter aWriter = new FileWriter(
-					sourceFolder+packagePath + File.separatorChar + DYNAMIC_CLASS_NAME + ".java", false);
+					sourceFolder/*+packagePath + File.separatorChar*/ + DYNAMIC_CLASS_NAME + ".java", false);
 			aWriter.write("package "+packageName+";");
 			aWriter.write("public class " + DYNAMIC_CLASS_NAME + " implements "+interfaceName+"{");
 			aWriter.write(" public String sayHelloRedis() {");
@@ -75,8 +77,8 @@ public class AOPBefore {
 	}
 
 	public boolean compileIt(String classFolder, String sourceFolder, String packagePath) {
-		String[] source = { "-cp",".:/*","-d", classFolder, "-sourcepath", sourceFolder,
-				new String(sourceFolder+packagePath + File.separatorChar + DYNAMIC_CLASS_NAME + ".java") };
+		String[] source = { "-cp",".;"+JAR_NAME,"-d", classFolder, "-sourcepath", sourceFolder,
+				new String(sourceFolder/*+packagePath + File.separatorChar*/ + DYNAMIC_CLASS_NAME + ".java") };
 		return (Main.compile(source) == 0);
 	}
 
@@ -94,14 +96,14 @@ public class AOPBefore {
 		return null;
 	}
 	
-	private CodeInterface getImplementation(String classFolder, String sourceFolder, String interfaceName) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException{
+	private Object getImplementation(String classFolder, String sourceFolder, String interfaceName) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException{
 		String packageName = interfaceName.substring(0, interfaceName.lastIndexOf("."));
 		String interfaceClassName = interfaceName.substring(interfaceName.lastIndexOf(".")+1);
 		createIt(packageName,interfaceClassName,sourceFolder);
 		if (compileIt(classFolder,sourceFolder,packageName.replace(".", "/"))) {
 			logger.info("Compiled correctly");
 			try {	
-				return (CodeInterface)reloadImplementation(classFolder,packageName+"."+DYNAMIC_CLASS_NAME,interfaceName);
+				return /*(CodeInterface)*/reloadImplementation(classFolder,packageName+"."+DYNAMIC_CLASS_NAME,interfaceName);
 			} catch (IOException e) {
 				logger.error(e.getMessage(),e);
 				return null;
@@ -116,6 +118,7 @@ public class AOPBefore {
 	private Object reloadImplementation(String classFolder,String fullPackageClass, String packageInterfaceName) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException, IllegalArgumentException, SecurityException{
 		DynamicClassLoader dynamicClassLoader = new DynamicClassLoader(classFolder);
 		dynamicClassLoader.getLoadedClasses().add(packageInterfaceName);
+		dynamicClassLoader.getLoadedClassesReferences().put(packageInterfaceName, Class.forName(packageInterfaceName));
 		Class<?> reloadedClass = dynamicClassLoader.load(fullPackageClass);
 	    if(reloadedClass.isInterface()){
 	    	return null;
