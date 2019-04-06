@@ -58,7 +58,9 @@ public class AOPBefore {
 
 	public void createIt(String packageName, String interfaceName, String sourceFolder) throws IOException {
 
+			//TODO: da parametrizzare
 			Jedis jedis = new Jedis("localhost");
+			//TODO: i metodi da richiedere a redis li devo prendere tramite reflection da interfaceName
 			String value = jedis.get("helloworldmethod");
 			logger.info("VALUE: " + value);
 			jedis.close();
