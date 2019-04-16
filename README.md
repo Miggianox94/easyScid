@@ -18,7 +18,7 @@ __1. Add the following items to your pom.xml:__
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 
-	<dependencies>
+    <dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -79,6 +79,11 @@ __1. Add the following items to your pom.xml:__
 __2. Add the .jar library as dependency in your project: easyscid-core-0.0.1.jar__
 
 __3. Mark your methods with the @EasyScidMethod annotation and specify your own proprierties__
+
+    example: @EasyScidMethod(classFolder="./target/test-classes/", sourceFolder="./src/", interfaceName = "it.coluccia.easyscid.tester.CodeInterface", setterMethod = "setCodeFactory")
+
+* sourceFolder must be the folder that contains the interface package: if your interface is it.coluccia.easyscid.tester.CodeInterface --> sourceFolder must be the folder that contains the folder named "it"
+
 
 ## Usage
 
